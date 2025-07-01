@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lakehouse Explorer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #f8fafc;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1e293b;
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .connection-status {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-connected {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status-disconnected {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .metric-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .table-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .table-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+
+        .namespace-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            border-radius: 50px;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem 3rem 0.75rem 1.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .table-preview-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sidebar {
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            min-height: calc(100vh - 76px);
+            padding: 1.5rem;
+        }
+
+        .namespace-item {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .namespace-item:hover {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+
+        .namespace-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-database me-2"></i>
+                Lakehouse Explorer
+            </a>
+            <div class="d-flex align-items-center">
+                <div id="connectionStatus" class="connection-status status-disconnected">
+                    <i class="fas fa-circle me-1"></i>
+                    <span>Checking connection...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <h5 class="mb-3">
+                        <i class="fas fa-folder me-2"></i>
+                        Namespaces
+                    </h5>
+                    <div id="namespaceList">
+                        <div class="text-center">
+                            <div class="loading-spinner"></div>
+                            <p class="mt-2 text-muted">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-md-9">
+                <!-- Dashboard Overview -->
+                <div id="dashboardOverview" class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <div id="totalNamespaces" class="metric-number">-</div>
+                            <div class="metric-label">Namespaces</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <div id="totalTables" class="metric-number">-</div>
+                            <div class="metric-label">Tables</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="form-control search-input" 
+                           placeholder="Search tables across all namespaces...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+
+                <!-- Tables List -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            <span id="tableListTitle">All Tables</span>
+                        </h5>
+                        <button id="refreshBtn" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="tablesList">
+                            <div class="text-center">
+                                <div class="loading-spinner"></div>
+                                <p class="mt-2 text-muted">Loading tables...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Details Modal -->
+    <div class="modal fade" id="tableModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-table me-2"></i>
+                        <span id="modalTableName">Table Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Table Info Tabs -->
+                    <ul class="nav nav-tabs" id="tableInfoTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#info" type="button" role="tab">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Information
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="schema-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#schema" type="button" role="tab">
+                                <i class="fas fa-list me-1"></i>
+                                Schema
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="preview-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#preview" type="button" role="tab">
+                                <i class="fas fa-eye me-1"></i>
+                                Data Preview
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="tableInfoTabsContent">
+                        <!-- Information Tab -->
+                        <div class="tab-pane fade show active" id="info" role="tabpanel">
+                            <div class="mt-3" id="tableInfo">
+                                <div class="text-center">
+                                    <div class="loading-spinner"></div>
+                                    <p class="mt-2 text-muted">Loading table information...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schema Tab -->
+                        <div class="tab-pane fade" id="schema" role="tabpanel">
+                            <div class="mt-3" id="tableSchema">
+                                <div class="text-center">
+                                    <div class="loading-spinner"></div>
+                                    <p class="mt-2 text-muted">Loading schema...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Tab -->
+                        <div class="tab-pane fade" id="preview" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Data Preview</h6>
+                                    <div>
+                                        <label for="previewLimit" class="form-label me-2">Rows:</label>
+                                        <select id="previewLimit" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                            <option value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                        <button id="refreshPreview" class="btn btn-primary btn-sm ms-2">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="tablePreview">
+                                    <div class="text-center">
+                                        <div class="loading-spinner"></div>
+                                        <p class="mt-2 text-muted">Loading preview...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Application JavaScript -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
