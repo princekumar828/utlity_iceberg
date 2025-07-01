@@ -52,6 +52,25 @@ class LakehouseExplorer {
             });
         }
 
+        // SQL Query execution
+        const executeQueryBtn = document.getElementById('executeQueryBtn');
+        if (executeQueryBtn) {
+            executeQueryBtn.addEventListener('click', () => {
+                this.executeQuery();
+            });
+        }
+
+        // Statistics loading
+        const loadStatsBtn = document.getElementById('loadStatsBtn');
+        if (loadStatsBtn) {
+            loadStatsBtn.addEventListener('click', () => {
+                if (this.currentTable) {
+                    this.loadTableStatistics(this.currentTable.namespace, this.currentTable.name);
+                }
+                }
+            });
+        }
+
         // Refresh preview button
         const refreshPreview = document.getElementById('refreshPreview');
         if (refreshPreview) {
@@ -487,6 +506,181 @@ class LakehouseExplorer {
         });
     }
 
+    async executeQuery() {
+        const queryText = document.getElementById('sqlQuery').value;
+        if (!queryText.trim()) {
+            this.showError('Please enter a SQL query');
+            return;
+        }
+
+        if (!this.currentTable) {
+            this.showError('Please select a table first');
+            return;
+        }
+
+        const queryBtn = document.getElementById('executeQueryBtn');
+        const originalText = queryBtn.textContent;
+        queryBtn.textContent = 'Executing...';
+        queryBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/table/${this.currentTable.namespace}/${this.currentTable.name}/query`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: queryText,
+                    limit: document.getElementById('queryLimit')?.value || 100
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.query_result.success) {
+                this.renderQueryResults(data.query_result);
+            } else {
+                this.showError(`Query Error: ${data.query_result.error}`);
+            }
+
+        } catch (error) {
+            this.showError(`Error executing query: ${error.message}`);
+        } finally {
+            queryBtn.textContent = originalText;
+            queryBtn.disabled = false;
+        }
+    }
+
+    renderQueryResults(queryResult) {
+        const container = document.getElementById('queryResults');
+        if (!container) return;
+
+        const result = queryResult.result;
+        
+        let html = `
+            <div class="query-result-header">
+                <h4>Query Results</h4>
+                <p class="query-info">
+                    <strong>Rows:</strong> ${result.row_count} | 
+                    <strong>Engine:</strong> ${result.engine || 'duckdb'}
+                </p>
+            </div>
+        `;
+
+        if (result.data && result.data.length > 0) {
+            html += '<div class="table-container">';
+            html += '<table class="data-table">';
+            
+            // Headers
+            html += '<thead><tr>';
+            result.columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Data rows
+            html += '<tbody>';
+            result.data.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    const cellValue = cell === null ? '<em>null</em>' : String(cell);
+                    html += `<td>${cellValue}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            
+            html += '</table>';
+            html += '</div>';
+        } else {
+            html += '<p class="no-data">No data returned</p>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    async loadTableStatistics(namespace, tableName) {
+        const statsBtn = document.getElementById('loadStatsBtn');
+        const originalText = statsBtn.textContent;
+        statsBtn.textContent = 'Loading...';
+        statsBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/table/${namespace}/${tableName}/statistics`);
+            const data = await response.json();
+
+            if (data.statistics) {
+                this.renderTableStatistics(data.statistics);
+            } else {
+                this.showError('Failed to load statistics');
+            }
+
+        } catch (error) {
+            this.showError(`Error loading statistics: ${error.message}`);
+        } finally {
+            statsBtn.textContent = originalText;
+            statsBtn.disabled = false;
+        }
+    }
+
+    renderTableStatistics(stats) {
+        const container = document.getElementById('tableStatistics');
+        if (!container) return;
+
+        let html = `
+            <div class="statistics-header">
+                <h4>Table Statistics</h4>
+                <p class="stats-engine">Engine: ${stats.engine || 'duckdb'}</p>
+            </div>
+            
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <label>Total Rows:</label>
+                    <span>${stats.total_rows.toLocaleString()}</span>
+                </div>
+                <div class="stat-item">
+                    <label>Distinct Rows:</label>
+                    <span>${stats.distinct_rows.toLocaleString()}</span>
+                </div>
+            </div>
+        `;
+
+        if (stats.column_statistics) {
+            html += '<div class="column-statistics">';
+            html += '<h5>Column Statistics</h5>';
+            html += '<div class="stats-table-container">';
+            html += '<table class="stats-table">';
+            html += '<thead><tr><th>Column</th><th>Count</th><th>Distinct</th><th>Nulls</th><th>Null %</th></tr></thead>';
+            html += '<tbody>';
+
+            Object.entries(stats.column_statistics).forEach(([col, colStats]) => {
+                if (colStats.error) {
+                    html += `<tr><td>${col}</td><td colspan="4">Error: ${colStats.error}</td></tr>`;
+                } else {
+                    html += `
+                        <tr>
+                            <td><strong>${col}</strong></td>
+                            <td>${colStats.count.toLocaleString()}</td>
+                            <td>${colStats.distinct_count.toLocaleString()}</td>
+                            <td>${colStats.null_count.toLocaleString()}</td>
+                            <td>${colStats.null_percentage}%</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            html += '</tbody></table>';
+            html += '</div>';
+            html += '</div>';
+        }
+
+        if (stats.note) {
+            html += `<p class="stats-note"><em>${stats.note}</em></p>`;
+        }
+
+        container.innerHTML = html;
+    }
+
     getLoadingHTML() {
         return `
             <div class="text-center">
@@ -529,6 +723,19 @@ class LakehouseExplorer {
         toastElement.addEventListener('hidden.bs.toast', () => {
             toastElement.remove();
         });
+    }
+
+    showError(message) {
+        const errorContainer = document.getElementById('errorContainer');
+        if (errorContainer) {
+            errorContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
     }
 }
 

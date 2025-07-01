@@ -1,8 +1,11 @@
+"""
+Configuration management for Lakehouse Explorer Web App
+"""
+
 import os
-import sys
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
 import json
+from typing import Optional
+from dataclasses import dataclass
 
 @dataclass
 class LakehouseConfig:
@@ -84,7 +87,7 @@ class LakehouseConfig:
         
         return cls(**config_data)
     
-    def to_pyiceberg_catalog_config(self) -> Dict[str, Any]:
+    def to_pyiceberg_catalog_config(self):
         """Convert to PyIceberg catalog configuration"""
         config = {
             "type": "rest",
@@ -109,22 +112,30 @@ class LakehouseConfig:
                 config["password"] = self.nessie_password
         
         return config
+
+def get_config() -> LakehouseConfig:
+    """Get configuration from environment or config file"""
+    # Try config file first
+    if os.path.exists('config.json'):
+        return LakehouseConfig.from_file('config.json')
     
-    def create_sample_config(self, file_path: str):
-        """Create a sample configuration file"""
-        sample_config = {
-            "nessie_uri": "http://localhost:19120/api/v1",
-            "nessie_ref": "main",
-            "s3_endpoint": "http://localhost:9000",
-            "s3_access_key": "minioadmin",
-            "s3_secret_key": "minioadmin",
-            "s3_region": "us-east-1",
-            "warehouse_path": "s3://warehouse/",
-            "ssl_verify": False
-        }
-        
-        with open(file_path, 'w') as f:
-            json.dump(sample_config, f, indent=2)
-        
-        print(f"Sample configuration created at: {file_path}")
-        print("Please update the values according to your setup.")
+    # Try sample config
+    if os.path.exists('sample-config.json'):
+        return LakehouseConfig.from_file('sample-config.json')
+    
+    # Try environment variables
+    try:
+        return LakehouseConfig.from_env()
+    except ValueError:
+        pass
+    
+    # Last resort - try config in config directory
+    if os.path.exists('config/lakehouse.json'):
+        return LakehouseConfig.from_file('config/lakehouse.json')
+    
+    raise ValueError(
+        "No configuration found. Please provide either:\n"
+        "1. config.json file in the root directory\n"
+        "2. Environment variables (NESSIE_URI, S3_ENDPOINT, etc.)\n"
+        "3. config/lakehouse.json file"
+    )

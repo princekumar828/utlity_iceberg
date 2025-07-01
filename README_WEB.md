@@ -13,9 +13,6 @@ A modern web-based tool to explore and view Apache Iceberg tables in your lakeho
 - 📊 **Table Information**: Get detailed schema, metadata, and properties
 - 👁️ **Data Preview**: Preview table contents with configurable row limits
 - 🔍 **Search**: Search for tables across all namespaces
-- ⚡ **DuckDB Integration**: High-performance SQL queries and analytics
-- 📈 **Table Statistics**: Detailed column statistics and data profiling
-- 💻 **SQL Editor**: Execute custom SQL queries with DuckDB engine
 - 📱 **Responsive Design**: Works great on desktop, tablet, and mobile
 - 🚀 **RESTful API**: JSON API for programmatic access
 - ⚙️ **Flexible Configuration**: Environment variables or JSON config
@@ -90,8 +87,6 @@ SSL_VERIFY=false
    - Browse namespaces in the sidebar
    - Click on tables to view schema and metadata
    - Use the preview feature to see sample data
-   - **Execute SQL queries** with the DuckDB-powered SQL editor
-   - **Analyze data** with automatic table statistics
    - Search for tables across all namespaces
 
 ## 🏗️ Project Structure
@@ -133,8 +128,6 @@ The application provides a RESTful API:
 - `GET /api/table/{namespace}/{table}/schema` - Get table schema
 - `GET /api/table/{namespace}/{table}/metadata` - Get table metadata
 - `GET /api/table/{namespace}/{table}/preview?limit=N` - Preview table data
-- `POST /api/table/{namespace}/{table}/query` - Execute SQL query with DuckDB
-- `GET /api/table/{namespace}/{table}/statistics` - Get table statistics
 - `GET /api/search?q=term` - Search for tables
 - `GET /api/connection` - Get connection information
 
@@ -169,10 +162,9 @@ gunicorn -c gunicorn.conf.py app:create_app()
 
 ## 🎨 Technology Stack
 
-- **Backend**: Python Flask with PyIceberg and DuckDB
+- **Backend**: Python Flask with PyIceberg
 - **Frontend**: Vanilla JavaScript with modern CSS
-- **Data Processing**: DuckDB for high-performance analytics
-- **Table Format**: Apache Iceberg with PyIceberg integration
+- **Data Processing**: Pandas for data manipulation
 - **Storage**: Apache Iceberg tables via Nessie catalog
 - **Infrastructure**: MinIO/S3 compatible storage
 

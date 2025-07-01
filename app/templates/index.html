@@ -209,6 +209,85 @@
             background-color: var(--primary-color);
             color: white;
         }
+
+        /* DuckDB specific styles */
+        .query-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .query-info {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-item label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .stat-item span {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stats-table {
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .stats-table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+        }
+
+        .stats-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .stats-note {
+            font-style: italic;
+            color: #6c757d;
+            margin-top: 1rem;
+        }
+
+        .badge.bg-primary {
+            font-size: 0.7rem;
+        }
+
+        .badge.bg-success {
+            font-size: 0.7rem;
+        }
+
+        #sqlQuery {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -332,6 +411,22 @@
                                 Data Preview
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="query-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#query" type="button" role="tab">
+                                <i class="fas fa-code me-1"></i>
+                                SQL Query
+                                <span class="badge bg-primary ms-1">DuckDB</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="stats-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#stats" type="button" role="tab">
+                                <i class="fas fa-chart-bar me-1"></i>
+                                Statistics
+                                <span class="badge bg-success ms-1">DuckDB</span>
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Tab Content -->
@@ -378,6 +473,76 @@
                                     <div class="text-center">
                                         <div class="loading-spinner"></div>
                                         <p class="mt-2 text-muted">Loading preview...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SQL Query Tab -->
+                        <div class="tab-pane fade" id="query" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>
+                                        <i class="fas fa-code me-2"></i>
+                                        SQL Query with DuckDB
+                                    </h6>
+                                    <div>
+                                        <label for="queryLimit" class="form-label me-2">Result Limit:</label>
+                                        <select id="queryLimit" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                            <option value="50">50</option>
+                                            <option value="100" selected>100</option>
+                                            <option value="500">500</option>
+                                            <option value="1000">1000</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="sqlQuery" class="form-label">SQL Query:</label>
+                                    <textarea id="sqlQuery" class="form-control" rows="8" 
+                                              placeholder="SELECT * FROM table_name WHERE column = 'value'&#10;&#10;-- DuckDB SQL syntax supported&#10;-- Table name will be automatically substituted"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button id="executeQueryBtn" class="btn btn-primary">
+                                        <i class="fas fa-play me-1"></i>
+                                        Execute Query
+                                    </button>
+                                    <button class="btn btn-secondary ms-2" onclick="document.getElementById('sqlQuery').value = 'SELECT * FROM table_name LIMIT 10'">
+                                        <i class="fas fa-magic me-1"></i>
+                                        Sample Query
+                                    </button>
+                                </div>
+                                
+                                <div id="queryResults">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Enter a SQL query above and click "Execute Query" to see results.
+                                        <br><small class="text-muted">Powered by DuckDB for fast analytical queries.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Tab -->
+                        <div class="tab-pane fade" id="stats" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Table Statistics
+                                    </h6>
+                                    <button id="loadStatsBtn" class="btn btn-success btn-sm">
+                                        <i class="fas fa-sync-alt me-1"></i>
+                                        Load Statistics
+                                    </button>
+                                </div>
+                                
+                                <div id="tableStatistics">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Click "Load Statistics" to analyze this table using DuckDB.
+                                        <br><small class="text-muted">Get detailed column statistics, null counts, and data distribution.</small>
                                     </div>
                                 </div>
                             </div>

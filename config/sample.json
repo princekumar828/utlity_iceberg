@@ -1,0 +1,10 @@
+{
+  "nessie_uri": "http://your-nessie-host:19120/api/v1",
+  "nessie_ref": "main",
+  "s3_endpoint": "http://your-minio-host:9000",
+  "s3_access_key": "your-access-key",
+  "s3_secret_key": "your-secret-key",
+  "s3_region": "us-east-1",
+  "warehouse_path": "s3://your-warehouse-bucket/",
+  "ssl_verify": false
+}

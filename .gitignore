@@ -1,5 +1,3 @@
-# .gitignore for Lakehouse Explorer
-
 # Python
 __pycache__/
 *.py[cod]
@@ -21,16 +19,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
 env/
 ENV/
-
-# Configuration files with sensitive data
-config.json
-.env
-local-config.json
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
@@ -48,10 +44,28 @@ local-config.json
 ehthumbs.db
 Thumbs.db
 
+# Configuration files with sensitive data
+.env
+config.json
+config/lakehouse.json
+
 # Logs
 *.log
 logs/
 
+# Database
+*.db
+*.sqlite3
+
+# Flask
+instance/
+.webassets-cache
+
 # Temporary files
 *.tmp
 *.temp
+temp/
+
+# Old backup files
+README_OLD.md
+README_NEW.md
